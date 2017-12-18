@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -31,12 +32,12 @@ namespace Xmu.Crms.Shared
 
         private static IHostingEnvironment _hostingEnvironment;
 
-        public static IList<Assembly> ControllerAssembly { get; set; } =
-            new List<Assembly> { Assembly.GetEntryAssembly() };
+        public static ISet<Assembly> ControllerAssembly { get; set; } =
+            new HashSet<Assembly> { Assembly.GetEntryAssembly() };
 
-        public static IList<string> ViewPath { get; set; } = new List<string>();
+        public static ISet<string> ViewPath { get; set; } = new HashSet<string>();
 
-        public static IList<string> WebRootPath { get; set; } = new List<string>();
+        public static ISet<string> WebRootPath { get; set; } = new HashSet<string>();
 
         public static Func<IServiceCollection, IServiceCollection> ConfigureCrmsServices { get; set; } = c => c;
 
@@ -170,9 +171,22 @@ namespace Xmu.Crms.Shared
                 //$env:ASPNETCORE_ENVIRONMENT="Production"
                 services.AddDbContextPool<CrmsContext>(options => options.UseInMemoryDatabase("CRMS"));
             }
+            foreach (var assembly in ControllerAssembly)
+            {
+                var basePath =
+                    Path.GetFullPath(_hostingEnvironment.ContentRootPath + "\\..\\" + assembly.GetName().Name);
+                if (TryPath(basePath) != null)
+                {
+                    ViewPath.Add(basePath);
+                }
+                if (TryPath(basePath + "\\webroot") != null)
+                {
+                    WebRootPath.Add(Path.GetFullPath(basePath + "\\wwwroot"));
+                }
+            }
 
-            _hostingEnvironment.ContentRootFileProvider = new CompositeFileProvider(ViewPath.Select(p => new PhysicalFileProvider(p)));
-            _hostingEnvironment.WebRootFileProvider = new CompositeFileProvider(WebRootPath.Select(p => new PhysicalFileProvider(p)));
+            _hostingEnvironment.ContentRootFileProvider = new CompositeFileProvider(ViewPath.Select(p => new PhysicalFileProvider(p)).Cast<IFileProvider>().Concat(ControllerAssembly.Select(t => new EmbeddedFileProvider(t))));
+            _hostingEnvironment.WebRootFileProvider = new CompositeFileProvider(WebRootPath.Select(p => new PhysicalFileProvider(p)).Cast<IFileProvider>().Concat(ControllerAssembly.Select(t => new EmbeddedFileProvider(t, "webroot"))));
 
             // MVC
             services
@@ -186,6 +200,17 @@ namespace Xmu.Crms.Shared
             // 定时任务
             services.AddScheduler();
 
+            IFileProvider TryPath(string p)
+            {
+                try
+                {
+                    return new PhysicalFileProvider(p);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
