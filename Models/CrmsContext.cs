@@ -21,6 +21,10 @@ namespace Xmu.Crms.Shared.Models
         public DbSet<Topic> Topic { get; set; }
         public DbSet<UserInfo> UserInfo { get; set; }
 
+        public CrmsContext(DbContextOptions options) : base(options)
+        {
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
