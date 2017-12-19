@@ -179,7 +179,7 @@ namespace Xmu.Crms.Shared
                 {
                     ViewPath.Add(basePath);
                 }
-                if (TryPath(basePath + "\\webroot") != null)
+                if (TryPath(basePath + "\\wwwroot") != null)
                 {
                     WebRootPath.Add(Path.GetFullPath(basePath + "\\wwwroot"));
                 }
