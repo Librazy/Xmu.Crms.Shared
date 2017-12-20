@@ -1,13 +1,11 @@
-﻿using Xmu.Crms.Shared.Scheduling;
-
-namespace Xmu.Crms.Shared.Service
+﻿namespace Xmu.Crms.Shared.Service
 {
-/**
- * 定时器
- * 
- * @author qinlingyun liuaiqi
- * @version 2.00
- */
+    /**
+     * 定时器
+     * 
+     * @author qinlingyun liuaiqi
+     * @version 2.00
+     */
     public interface ITimerService
     {
         /// <summary>

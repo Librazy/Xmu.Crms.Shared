@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,17 +23,16 @@ namespace Xmu.Crms.Shared
 {
     public class Startup
     {
+        private readonly IConfiguration _configuration;
+
+        private readonly IHostingEnvironment _hostingEnvironment;
+
+        private readonly CrmsStartupConfig _startupConfig;
         private string _connString = string.Empty;
 
         private SymmetricSecurityKey _signingKey;
 
         private TokenValidationParameters _tokenValidationParameters;
-
-        private readonly IHostingEnvironment _hostingEnvironment;
-
-        private readonly IConfiguration _configuration;
-
-        private readonly CrmsStartupConfig _startupConfig;
 
         public Startup(IConfiguration configuration, IHostingEnvironment env, CrmsStartupConfig startupConfig)
         {
@@ -152,16 +150,18 @@ namespace Xmu.Crms.Shared
                     });
 
             // 数据库
-            if (!_hostingEnvironment.IsDevelopment())
-            {
-                //$env:ASPNETCORE_ENVIRONMENT="Development"
-                _connString = _configuration.GetConnectionString("MYSQL57");
-                services.AddDbContextPool<CrmsContext>(options => options.UseMySql(_connString));
-            }
-            else
+            if (_hostingEnvironment.IsDevelopment() && Convert.ToBoolean(_configuration["Database:UseInMem"]))
             {
                 //$env:ASPNETCORE_ENVIRONMENT="Production"
                 services.AddDbContextPool<CrmsContext>(options => options.UseInMemoryDatabase("CRMS"));
+            }
+            else
+            {
+                //$env:ASPNETCORE_ENVIRONMENT="Development"
+                _connString = _configuration.GetConnectionString("MYSQL57");
+                services.AddDbContextPool<CrmsContext>(options =>
+                    options.UseMySql(_connString)
+                );
             }
             foreach (var assembly in _startupConfig.ControllerAssemblies)
             {
@@ -177,8 +177,12 @@ namespace Xmu.Crms.Shared
                 }
             }
 
-            _hostingEnvironment.ContentRootFileProvider = new CompositeFileProvider(_startupConfig.ViewPath.Select(p => new PhysicalFileProvider(p)).Cast<IFileProvider>().Concat(_startupConfig.ControllerAssemblies.Select(t => new EmbeddedFileProvider(t))));
-            _hostingEnvironment.WebRootFileProvider = new CompositeFileProvider(_startupConfig.WebRootPath.Select(p => new PhysicalFileProvider(p)).Cast<IFileProvider>().Concat(_startupConfig.ControllerAssemblies.Select(t => new EmbeddedFileProvider(t, "webroot"))));
+            _hostingEnvironment.ContentRootFileProvider = new CompositeFileProvider(_startupConfig.ViewPath
+                .Select(p => new PhysicalFileProvider(p)).Cast<IFileProvider>()
+                .Concat(_startupConfig.ControllerAssemblies.Select(t => new EmbeddedFileProvider(t))));
+            _hostingEnvironment.WebRootFileProvider = new CompositeFileProvider(_startupConfig.WebRootPath
+                .Select(p => new PhysicalFileProvider(p)).Cast<IFileProvider>().Concat(
+                    _startupConfig.ControllerAssemblies.Select(t => new EmbeddedFileProvider(t, "webroot"))));
 
             // MVC
             services
@@ -225,7 +229,7 @@ namespace Xmu.Crms.Shared
 
     public class CrmsStartupConfig
     {
-        public ISet<Assembly> ControllerAssemblies { get; set; } = new HashSet<Assembly> { Assembly.GetEntryAssembly() };
+        public ISet<Assembly> ControllerAssemblies { get; set; } = new HashSet<Assembly> {Assembly.GetEntryAssembly()};
 
         public ISet<string> ViewPath { get; set; } = new HashSet<string>();
 
