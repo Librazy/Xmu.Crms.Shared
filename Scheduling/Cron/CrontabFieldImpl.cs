@@ -4,7 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.Serialization;
 
-namespace Xmu.Crms.Shared.Scheduling.CronSchedule
+namespace Xmu.Crms.Shared.Scheduling.Cron
 {
     [Serializable]
     public sealed class CrontabFieldImpl : IObjectReference

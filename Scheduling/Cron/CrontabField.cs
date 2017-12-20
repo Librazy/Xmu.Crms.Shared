@@ -3,7 +3,7 @@ using System.Collections;
 using System.Globalization;
 using System.IO;
 
-namespace Xmu.Crms.Shared.Scheduling.CronSchedule
+namespace Xmu.Crms.Shared.Scheduling.Cron
 {
     /// <summary>
     /// Represents a single crontab field.

@@ -6,9 +6,9 @@ namespace Xmu.Crms.Shared.Scheduling
 {
     [AttributeUsage(AttributeTargets.Method,
                        AllowMultiple = true)]
-    public class Cron : Attribute
+    public class CronAttribute : Attribute
     {
-        public Cron(string schedule)
+        public CronAttribute(string schedule)
         {
             Schedule = schedule;
         }

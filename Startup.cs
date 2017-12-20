@@ -24,38 +24,30 @@ namespace Xmu.Crms.Shared
 {
     public class Startup
     {
-        private static string _connString = string.Empty;
+        private string _connString = string.Empty;
 
-        private static SymmetricSecurityKey _signingKey;
+        private SymmetricSecurityKey _signingKey;
 
-        private static TokenValidationParameters _tokenValidationParameters;
+        private TokenValidationParameters _tokenValidationParameters;
 
-        private static IHostingEnvironment _hostingEnvironment;
+        private readonly IHostingEnvironment _hostingEnvironment;
 
-        public static ISet<Assembly> ControllerAssembly { get; set; } =
-            new HashSet<Assembly> { Assembly.GetEntryAssembly() };
+        private readonly IConfiguration _configuration;
 
-        public static ISet<string> ViewPath { get; set; } = new HashSet<string>();
+        private readonly CrmsStartupConfig _startupConfig;
 
-        public static ISet<string> WebRootPath { get; set; } = new HashSet<string>();
-
-        public static Func<IServiceCollection, IServiceCollection> ConfigureCrmsServices { get; set; } = c => c;
-
-        public Startup(IConfiguration configuration, IHostingEnvironment env)
+        public Startup(IConfiguration configuration, IHostingEnvironment env, CrmsStartupConfig startupConfig)
         {
             _hostingEnvironment = env;
-            Configuration = configuration;
+            _startupConfig = startupConfig;
+            _configuration = configuration;
         }
-
-        public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            ConfigureCrmsServices.Invoke(services);
-
             // JWT参数
-            _signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration["Keys:ServerSecretKey"]));
+            _signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["Keys:ServerSecretKey"]));
 
             _tokenValidationParameters = new TokenValidationParameters
             {
@@ -163,7 +155,7 @@ namespace Xmu.Crms.Shared
             if (!_hostingEnvironment.IsDevelopment())
             {
                 //$env:ASPNETCORE_ENVIRONMENT="Development"
-                _connString = Configuration.GetConnectionString("MYSQL57");
+                _connString = _configuration.GetConnectionString("MYSQL57");
                 services.AddDbContextPool<CrmsContext>(options => options.UseMySql(_connString));
             }
             else
@@ -171,22 +163,22 @@ namespace Xmu.Crms.Shared
                 //$env:ASPNETCORE_ENVIRONMENT="Production"
                 services.AddDbContextPool<CrmsContext>(options => options.UseInMemoryDatabase("CRMS"));
             }
-            foreach (var assembly in ControllerAssembly)
+            foreach (var assembly in _startupConfig.ControllerAssemblies)
             {
                 var basePath =
                     Path.GetFullPath(_hostingEnvironment.ContentRootPath + "\\..\\" + assembly.GetName().Name);
                 if (TryPath(basePath) != null)
                 {
-                    ViewPath.Add(basePath);
+                    _startupConfig.ViewPath.Add(basePath);
                 }
                 if (TryPath(basePath + "\\wwwroot") != null)
                 {
-                    WebRootPath.Add(Path.GetFullPath(basePath + "\\wwwroot"));
+                    _startupConfig.WebRootPath.Add(Path.GetFullPath(basePath + "\\wwwroot"));
                 }
             }
 
-            _hostingEnvironment.ContentRootFileProvider = new CompositeFileProvider(ViewPath.Select(p => new PhysicalFileProvider(p)).Cast<IFileProvider>().Concat(ControllerAssembly.Select(t => new EmbeddedFileProvider(t))));
-            _hostingEnvironment.WebRootFileProvider = new CompositeFileProvider(WebRootPath.Select(p => new PhysicalFileProvider(p)).Cast<IFileProvider>().Concat(ControllerAssembly.Select(t => new EmbeddedFileProvider(t, "webroot"))));
+            _hostingEnvironment.ContentRootFileProvider = new CompositeFileProvider(_startupConfig.ViewPath.Select(p => new PhysicalFileProvider(p)).Cast<IFileProvider>().Concat(_startupConfig.ControllerAssemblies.Select(t => new EmbeddedFileProvider(t))));
+            _hostingEnvironment.WebRootFileProvider = new CompositeFileProvider(_startupConfig.WebRootPath.Select(p => new PhysicalFileProvider(p)).Cast<IFileProvider>().Concat(_startupConfig.ControllerAssemblies.Select(t => new EmbeddedFileProvider(t, "webroot"))));
 
             // MVC
             services
@@ -194,7 +186,7 @@ namespace Xmu.Crms.Shared
                 .AddJsonOptions(
                     option => { option.SerializerSettings.Converters.Add(new StringEnumConverter()); }
                 )
-                .AddApplicationParts(ControllerAssembly)
+                .AddApplicationParts(_startupConfig.ControllerAssemblies)
                 .AddControllersAsServices();
 
             // 定时任务
@@ -216,35 +208,29 @@ namespace Xmu.Crms.Shared
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app)
         {
-            app.UseStaticFiles();
+            if (_startupConfig.ConfigureCrmsApp != null)
+            {
+                _startupConfig.ConfigureCrmsApp.Invoke(app);
+            }
+            else
+            {
+                app.UseStaticFiles();
 
-            app.UseAuthentication();
+                app.UseAuthentication();
 
-            app.UseMvc();
+                app.UseMvc();
+            }
         }
     }
 
-    internal static class Utils
+    public class CrmsStartupConfig
     {
-        public static IMvcBuilder AddApplicationParts(this IMvcBuilder builder, IEnumerable<Assembly> assemblies)
-        {
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
+        public ISet<Assembly> ControllerAssemblies { get; set; } = new HashSet<Assembly> { Assembly.GetEntryAssembly() };
 
-            if (assemblies == null)
-            {
-                throw new ArgumentNullException(nameof(assemblies));
-            }
+        public ISet<string> ViewPath { get; set; } = new HashSet<string>();
 
-            foreach (var assembly in assemblies)
-            {
-                builder.ConfigureApplicationPartManager(manager => manager.ApplicationParts.Add(new AssemblyPart(assembly)));
-            } 
+        public ISet<string> WebRootPath { get; set; } = new HashSet<string>();
 
-            return builder;
-        }
+        public Action<IApplicationBuilder> ConfigureCrmsApp { get; set; }
     }
-
 }

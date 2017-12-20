@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 
-namespace Xmu.Crms.Shared.Scheduling.CronSchedule
+namespace Xmu.Crms.Shared.Scheduling.Cron
 {
     /// <summary>
     /// Represents a schedule initialized from the crontab expression.

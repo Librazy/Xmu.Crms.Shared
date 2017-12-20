@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Xmu.Crms.Shared.Scheduling.CronSchedule;
+using Xmu.Crms.Shared.Scheduling.Cron;
 using Xmu.Crms.Shared.Service;
 
 namespace Xmu.Crms.Shared.Scheduling
@@ -25,7 +25,7 @@ namespace Xmu.Crms.Shared.Scheduling
 
         public void AddTask(ITimerService scheduledTask, DateTime? nextRunTime = null)
         {
-            foreach ((var container, var method, var cron) in scheduledTask.GetType().GetMethods().SelectMany(m => m.GetCustomAttributes(typeof(Cron), true).OfType<Cron>().Select(c => (scheduledTask, m, c))))
+            foreach ((var container, var method, var cron) in scheduledTask.GetType().GetMethods().SelectMany(m => m.GetCustomAttributes(typeof(CronAttribute), true).OfType<CronAttribute>().Select(c => (scheduledTask, m, c))))
             {
                 if (!(cron.Schedule.StartsWith("* ") || cron.Schedule.StartsWith("0 ")))
                 {
