@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Xmu.Crms.Shared.Scheduling.CronSchedule;
+using Xmu.Crms.Shared.Service;
 
 namespace Xmu.Crms.Shared.Scheduling
 {
@@ -11,27 +14,32 @@ namespace Xmu.Crms.Shared.Scheduling
     {
         private readonly List<SchedulerTaskWrapper> _scheduledTasks = new List<SchedulerTaskWrapper>();
 
-        public SchedulerHostedService(IEnumerable<IScheduledTask> scheduledTasks)
+        public SchedulerHostedService(IEnumerable<ITimerService> scheduledTasks)
         {
-            var referenceTime = DateTime.UtcNow;
+            var referenceTime = DateTime.Now;
             foreach (var scheduledTask in scheduledTasks)
             {
                 AddTask(scheduledTask, referenceTime);
             }
         }
 
-        public void AddTask(IScheduledTask scheduledTask, DateTime? nextRunTime = null)
+        public void AddTask(ITimerService scheduledTask, DateTime? nextRunTime = null)
         {
-            if (scheduledTask.Interval < TimeSpan.FromMinutes(1))
+            foreach ((var container, var method, var cron) in scheduledTask.GetType().GetMethods().SelectMany(m => m.GetCustomAttributes(typeof(Cron), true).OfType<Cron>().Select(c => (scheduledTask, m, c))))
             {
-                throw new NotSupportedException();
+                if (!(cron.Schedule.StartsWith("* ") || cron.Schedule.StartsWith("0 ")))
+                {
+                    throw new NotImplementedException();
+                }
+                _scheduledTasks.Add(new SchedulerTaskWrapper
+                {
+                    Schedule = CrontabSchedule.Parse(cron.Schedule.Substring(2).Replace('?', '*')),
+                    Container = container,
+                    Task = method,
+                    NextRunTime = nextRunTime ?? DateTime.Now
+                });
             }
-            _scheduledTasks.Add(new SchedulerTaskWrapper
-            {
-                Interval = scheduledTask.Interval,
-                Task = scheduledTask,
-                NextRunTime = nextRunTime ?? DateTime.UtcNow
-            });
+
         }
 
         public event EventHandler<UnobservedTaskExceptionEventArgs> UnobservedTaskException;
@@ -42,14 +50,14 @@ namespace Xmu.Crms.Shared.Scheduling
             {
                 await ExecuteOnceAsync(cancellationToken);
 
-                await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
             }
         }
 
         private async Task ExecuteOnceAsync(CancellationToken cancellationToken)
         {
             var taskFactory = new TaskFactory(TaskScheduler.Current);
-            var referenceTime = DateTime.UtcNow;
+            var referenceTime = DateTime.Now;
 
             var tasksThatShouldRun = _scheduledTasks.Where(t => t.ShouldRun(referenceTime)).ToList();
 
@@ -58,11 +66,11 @@ namespace Xmu.Crms.Shared.Scheduling
                 taskThatShouldRun.Increment();
 
                 await taskFactory.StartNew(
-                    async () =>
+                    () =>
                     {
                         try
                         {
-                            await taskThatShouldRun.Task.ExecuteAsync(cancellationToken);
+                            taskThatShouldRun.Task.Invoke(taskThatShouldRun.Container, new object[]{});
                         }
                         catch (Exception ex)
                         {
@@ -83,16 +91,16 @@ namespace Xmu.Crms.Shared.Scheduling
 
         private class SchedulerTaskWrapper
         {
-            public TimeSpan Interval { private get; set; }
-            public IScheduledTask Task { get; set; }
-
+            public CrontabSchedule Schedule { private get; set; }
+            public ITimerService Container { get; set; }
+            public MethodInfo Task { get; set; }
             private DateTime LastRunTime { get; set; }
             public DateTime NextRunTime { private get; set; }
 
             public void Increment()
             {
                 LastRunTime = NextRunTime;
-                NextRunTime = LastRunTime + Interval;
+                NextRunTime = Schedule.GetNextOccurrence(NextRunTime);
             }
 
             public bool ShouldRun(DateTime currentTime) => NextRunTime < currentTime && LastRunTime != NextRunTime;

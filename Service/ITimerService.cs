@@ -8,7 +8,7 @@ namespace Xmu.Crms.Shared.Service
  * @author qinlingyun liuaiqi
  * @version 2.00
  */
-    public interface ITimerService: IScheduledTask
+    public interface ITimerService
     {
         /// <summary>
         /// 讨论课结束后计算展示得分.
