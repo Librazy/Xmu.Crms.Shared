@@ -44,12 +44,11 @@ namespace Xmu.Crms.Shared.Service
         /// @author qinlingyun
         /// </summary>
         /// <param name="userId">用户id</param>
-        /// <returns>true 解绑成功 false 解绑失败</returns>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.ICourseService.ListCourseByUserId(System.Int64)"/>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.ICourseService.DeleteCourseByCourseId(System.Int64)"/>
         /// <exception cref="T:System.ArgumentException">id格式错误</exception>
         /// <exception cref="T:Xmu.Crms.Shared.Exceptions.UserNotFoundException">未找到对应用户</exception>
-        bool DeleteTeacherAccount(long userId);
+        void DeleteTeacherAccount(long userId);
 
 
         /// <summary>
@@ -57,10 +56,9 @@ namespace Xmu.Crms.Shared.Service
         /// @author qinlingyun
         /// </summary>
         /// <param name="userId">用户id</param>
-        /// <returns>true 解绑成功 false 解绑失败</returns>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.IClassService.DeleteCourseSelectionById(System.Int64,System.Int64)"/>
         /// <exception cref="T:System.ArgumentException">id格式错误</exception>
         /// <exception cref="T:Xmu.Crms.Shared.Exceptions.UserNotFoundException">未找到对应用户</exception>
-        bool DeleteStudentAccount(long userId);
+        void DeleteStudentAccount(long userId);
     }
 }
