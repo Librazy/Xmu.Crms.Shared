@@ -3,12 +3,10 @@ using Xmu.Crms.Shared.Models;
 
 namespace Xmu.Crms.Shared.Service
 {
-    /**
- * 
- * @author LiuAiqi
- * @version 2.00
- *
- */
+    /// <summary>
+    /// @author LiuAiqi
+    /// @version 2.00
+    /// </summary>
     public interface ISchoolService
     {
         /// <summary>
@@ -24,8 +22,8 @@ namespace Xmu.Crms.Shared.Service
         /// @author LiuAiqi
         /// </summary>
         /// <param name="school">学校的信息</param>
-        /// <returns>true（添加学校成功）/false（添加学校未成功）</returns>
-        bool InsertSchool(School school);
+        /// <returns>schoolId 学校的id</returns>
+        long InsertSchool(School school);
 
         /// <summary>
         /// 获取省份列表.

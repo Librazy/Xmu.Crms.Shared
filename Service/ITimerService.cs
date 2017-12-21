@@ -1,11 +1,10 @@
 ﻿namespace Xmu.Crms.Shared.Service
 {
-    /**
-     * 定时器
-     * 
-     * @author qinlingyun liuaiqi
-     * @version 2.00
-     */
+    /// <summary>
+    /// 定时器
+    /// @author qinlingyun liuaiqi
+    /// @version 2.00
+    /// </summary>
     public interface ITimerService
     {
         /// <summary>

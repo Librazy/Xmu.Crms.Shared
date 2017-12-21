@@ -3,12 +3,10 @@ using Xmu.Crms.Shared.Models;
 
 namespace Xmu.Crms.Shared.Service
 {
-    /**
- * 
- * @author YeXiaona,ZhouZhongJun
- * @version 2.00
- *
- */
+    /// <summary>
+    /// @author YeXiaona,ZhouZhongJun
+    /// @version 2.00
+    /// </summary>
     public interface IClassService
     {
         /// <summary>
@@ -48,19 +46,17 @@ namespace Xmu.Crms.Shared.Service
         /// @author yexiaona
         /// </summary>
         /// <param name="classId">班级ID</param>
-        /// <returns>boolean 班级修改是否成功情况</returns>
-        bool UpdateClassByClassId(long classId);
+        void UpdateClassByClassId(long classId);
 
         /// <summary>
         /// 按班级id删除班级.
         /// @author yexiaona
         /// </summary>
         /// <param name="classId">班级ID</param>
-        /// <returns>boolean 班级删除是否成功情况</returns>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.IClassService.DeleteScoreRuleById(System.Int64)"/>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.IClassService.DeleteCourseSelectionById(System.Int64,System.Int64)"/>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.IFixGroupService.DeleteFixGroupByClassId(System.Int64)"/>
-        bool DeleteClassByClassId(long classId);
+        void DeleteClassByClassId(long classId);
 
         /// <summary>
         /// 学生按班级id选择班级.
@@ -77,8 +73,7 @@ namespace Xmu.Crms.Shared.Service
         /// </summary>
         /// <param name="userId">用户id</param>
         /// <param name="classId">班级id</param>
-        /// <returns>boolean 取消班级是否成功</returns>
-        bool DeleteCourseSelectionById(long userId, long classId);
+        void DeleteCourseSelectionById(long userId, long classId);
 
         /// <summary>
         /// 老师获取该班级签到、分组状态.
@@ -104,20 +99,18 @@ namespace Xmu.Crms.Shared.Service
         /// @author zhouzhongjun
         /// </summary>
         /// <param name="courseId">课程Id</param>
-        /// <returns>true删除成功 false删除失败</returns>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.IClassService.ListClassByCourseId(System.Int64)"/>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.IClassService.DeleteClassSelectionByClassId(System.Int64)"/>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.IClassService.DeleteScoreRuleById(System.Int64)"/>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.IFixGroupService.DeleteFixGroupByClassId(System.Int64)"/>
-        bool DeleteClassByCourseId(long courseId);
+        void DeleteClassByCourseId(long courseId);
 
         /// <summary>
         /// 按classId删除ScoreRule.
         /// @author zhouzhongjun
         /// </summary>
         /// <param name="classId">班级Id</param>
-        /// <returns>true删除成功 false删除失败</returns>
-        bool DeleteScoreRuleById(long classId);
+        void DeleteScoreRuleById(long classId);
 
         /// <summary>
         /// 查询评分规则.
@@ -142,7 +135,6 @@ namespace Xmu.Crms.Shared.Service
         /// </summary>
         /// <param name="classId">班级id</param>
         /// <param name="proportions">评分规则</param>
-        /// <returns>state 若修改成功则返回true，失败则返回false</returns>
-        bool UpdateScoreRule(long classId, ClassInfo proportions);
+        void UpdateScoreRule(long classId, ClassInfo proportions);
     }
 }

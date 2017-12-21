@@ -3,12 +3,10 @@ using Xmu.Crms.Shared.Models;
 
 namespace Xmu.Crms.Shared.Service
 {
-    /**
- * 
- * @author YeXiaona ZhouZhongjun CaoXingmei
- * @version 2.00
- *
- */
+    /// <summary>
+    /// @author YeXiaona ZhouZhongjun CaoXingmei
+    /// @version 2.00
+    /// </summary>
     public interface ICourseService
     {
         /// <summary>
@@ -17,8 +15,8 @@ namespace Xmu.Crms.Shared.Service
         /// </summary>
         /// <param name="userId">用户Id</param>
         /// <returns>null 课程列表</returns>
-        /// <exception cref="ArgumentException">userId格式错误时抛出</exception>
-        /// <exception cref="CourseNotFoundException">未找到课程</exception>
+        /// <exception cref="T:System.ArgumentException">userId格式错误时抛出</exception>
+        /// <exception cref="T:Xmu.Crms.Shared.Exceptions.CourseNotFoundException">未找到课程</exception>
         List<Course> ListCourseByUserId(long userId);
 
 
@@ -29,7 +27,7 @@ namespace Xmu.Crms.Shared.Service
         /// <param name="userId">用户Id</param>
         /// <param name="course">课程信息</param>
         /// <returns>courseId 新建课程的id</returns>
-        /// <exception cref="ArgumentException">userId格式错误时抛出</exception>
+        /// <exception cref="T:System.ArgumentException">userId格式错误时抛出</exception>
         long InsertCourseByUserId(long userId, Course course);
 
 
@@ -39,8 +37,8 @@ namespace Xmu.Crms.Shared.Service
         /// </summary>
         /// <param name="courseId">课程Id</param>
         /// <returns>course</returns>
-        /// <exception cref="ArgumentException">userId格式错误时抛出</exception>
-        /// <exception cref="CourseNotFoundException">未找到课程</exception>
+        /// <exception cref="T:System.ArgumentException">userId格式错误时抛出</exception>
+        /// <exception cref="T:Xmu.Crms.Shared.Exceptions.CourseNotFoundException">未找到课程</exception>
         Course GetCourseByCourseId(long courseId);
 
 
@@ -50,8 +48,7 @@ namespace Xmu.Crms.Shared.Service
         /// </summary>
         /// <param name="courseId">课程Id</param>
         /// <param name="course">课程信息</param>
-        /// <returns>true修改成功  false修改失败</returns>
-        bool UpdateCourseByCourseId(long courseId, Course course);
+        void UpdateCourseByCourseId(long courseId, Course course);
 
 
         /// <summary>
@@ -59,12 +56,11 @@ namespace Xmu.Crms.Shared.Service
         /// @author ZhouZhongjun
         /// </summary>
         /// <param name="courseId">课程Id</param>
-        /// <returns>true删除成功  false删除失败</returns>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.ISeminarService.DeleteSeminarByCourseId(System.Int64)"/>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.IClassService.DeleteClassByCourseId(System.Int64)"/>
-        /// <exception cref="ArgumentException">courseId格式错误时抛出</exception>
-        /// <exception cref="CourseNotFoundException">未找到课程</exception>
-        bool DeleteCourseByCourseId(long courseId);
+        /// <exception cref="T:System.ArgumentException">courseId格式错误时抛出</exception>
+        /// <exception cref="T:Xmu.Crms.Shared.Exceptions.CourseNotFoundException">未找到课程</exception>
+        void DeleteCourseByCourseId(long courseId);
 
 
         /// <summary>
@@ -107,7 +103,7 @@ namespace Xmu.Crms.Shared.Service
         /// <returns>list 班级列表</returns>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.ICourseService.ListCourseByUserId(System.Int64)"/>
         /// <seealso cref="M:Xmu.Crms.Shared.Service.IClassService.ListClassByCourseId(System.Int64)"/>
-        /// <exception cref="ArgumentException">userId格式错误时抛出</exception>
+        /// <exception cref="T:System.ArgumentException">userId格式错误时抛出</exception>
         List<ClassInfo> ListClassByUserId(long userId);
     }
 }
