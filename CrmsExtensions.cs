@@ -33,7 +33,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public static IServiceCollection AddCrmsView(this IServiceCollection serviceCollection, string viewName)
         {
-            var startConfig = serviceCollection.SingleOrDefault(s => s.ImplementationType == typeof(CrmsStartupConfig))?.ImplementationInstance as CrmsStartupConfig ?? new CrmsStartupConfig();
+            var startConfig = serviceCollection.SingleOrDefault(s => s.ServiceType == typeof(CrmsStartupConfig))?.ImplementationInstance as CrmsStartupConfig ?? new CrmsStartupConfig();
             startConfig.ControllerAssemblies.Add(Assembly.Load("Xmu.Crms." + viewName));
             serviceCollection.TryAdd(new ServiceDescriptor(typeof(CrmsStartupConfig), startConfig));
             return serviceCollection;
