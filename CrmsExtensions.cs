@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xmu.Crms.Shared;
 
@@ -35,6 +36,14 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             var startConfig = serviceCollection.SingleOrDefault(s => s.ServiceType == typeof(CrmsStartupConfig))?.ImplementationInstance as CrmsStartupConfig ?? new CrmsStartupConfig();
             startConfig.ControllerAssemblies.Add(Assembly.Load("Xmu.Crms." + viewName));
+            serviceCollection.TryAdd(new ServiceDescriptor(typeof(CrmsStartupConfig), startConfig));
+            return serviceCollection;
+        }
+
+        public static IServiceCollection UseCrmsSqlite(this IServiceCollection serviceCollection, SqliteConnection sqlite)
+        {
+            var startConfig = serviceCollection.SingleOrDefault(s => s.ServiceType == typeof(CrmsStartupConfig))?.ImplementationInstance as CrmsStartupConfig ?? new CrmsStartupConfig();
+            startConfig.SqliteConnection = sqlite;
             serviceCollection.TryAdd(new ServiceDescriptor(typeof(CrmsStartupConfig), startConfig));
             return serviceCollection;
         }

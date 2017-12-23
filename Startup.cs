@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -152,12 +153,19 @@ namespace Xmu.Crms.Shared
             // 数据库
             if (_hostingEnvironment.IsDevelopment() && Convert.ToBoolean(_configuration["Database:UseInMem"]))
             {
-                //$env:ASPNETCORE_ENVIRONMENT="Production"
-                services.AddDbContextPool<CrmsContext>(options => options.UseInMemoryDatabase("CRMS"));
+                //$env:ASPNETCORE_ENVIRONMENT="Development"
+                if (_startupConfig.SqliteConnection != null)
+                {
+                    services.AddDbContext<CrmsContext>(options => options.UseSqlite(_startupConfig.SqliteConnection));
+                }
+                else
+                {
+                    services.AddDbContextPool<CrmsContext>(options => options.UseInMemoryDatabase("CRMS"));
+                }
             }
             else
             {
-                //$env:ASPNETCORE_ENVIRONMENT="Development"
+                //$env:ASPNETCORE_ENVIRONMENT="Production"
                 _connString = _configuration.GetConnectionString("MYSQL57");
                 services.AddDbContextPool<CrmsContext>(options =>
                     options.UseMySql(_connString)
@@ -236,5 +244,7 @@ namespace Xmu.Crms.Shared
         public ISet<string> WebRootPath { get; set; } = new HashSet<string>();
 
         public Action<IApplicationBuilder> ConfigureCrmsApp { get; set; }
+
+        public SqliteConnection SqliteConnection { get; set; }
     }
 }
