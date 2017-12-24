@@ -4,42 +4,28 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Xmu.Crms.Shared.Scheduling.Cron;
-using Xmu.Crms.Shared.Service;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Xmu.Crms.Shared.Models;
 
 namespace Xmu.Crms.Shared.Scheduling
 {
     //Stolen from https://blog.maartenballiauw.be/post/2017/08/01/building-a-scheduled-cache-updater-in-aspnet-core-2.html
     public class SchedulerHostedService : HostedService
     {
-        private readonly List<SchedulerTaskWrapper> _scheduledTasks = new List<SchedulerTaskWrapper>();
+        private static readonly TimeSpan _Interval = TimeSpan.FromMinutes(5);
+        private readonly IServiceProvider _provider;
+        public IList<CrmsEventAttribute> Events { get; }
 
-        public SchedulerHostedService(IEnumerable<ITimerService> scheduledTasks)
+        public SchedulerHostedService(IServiceProvider provider)
         {
-            var referenceTime = DateTime.Now;
-            foreach (var scheduledTask in scheduledTasks)
-            {
-                AddTask(scheduledTask, referenceTime);
-            }
-        }
-
-        public void AddTask(ITimerService scheduledTask, DateTime? nextRunTime = null)
-        {
-            foreach ((var container, var method, var cron) in scheduledTask.GetType().GetMethods().SelectMany(m => m.GetCustomAttributes(typeof(CronAttribute), true).OfType<CronAttribute>().Select(c => (scheduledTask, m, c))))
-            {
-                if (!(cron.Schedule.StartsWith("* ") || cron.Schedule.StartsWith("0 ")))
-                {
-                    throw new NotImplementedException();
-                }
-                _scheduledTasks.Add(new SchedulerTaskWrapper
-                {
-                    Schedule = CrontabSchedule.Parse(cron.Schedule.Substring(2).Replace('?', '*')),
-                    Container = container,
-                    Task = method,
-                    NextRunTime = nextRunTime ?? DateTime.Now
-                });
-            }
-
+            _provider = provider;
+            Events = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(asm => !asm.IsDynamic)
+                .SelectMany(asm => asm.ExportedTypes)
+                .SelectMany(typ => typ.GetMethods()).SelectMany(m =>
+                    m.GetCustomAttributes(typeof(CrmsEventAttribute), true).OfType<CrmsEventAttribute>()
+                        .Select(e => e.SetCallback(m))).ToList();
         }
 
         public event EventHandler<UnobservedTaskExceptionEventArgs> UnobservedTaskException;
@@ -50,60 +36,71 @@ namespace Xmu.Crms.Shared.Scheduling
             {
                 await ExecuteOnceAsync(cancellationToken);
 
-                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                await Task.Delay(_Interval, cancellationToken);
             }
         }
 
         private async Task ExecuteOnceAsync(CancellationToken cancellationToken)
         {
-            var taskFactory = new TaskFactory(TaskScheduler.Current);
-            var referenceTime = DateTime.Now;
-
-            var tasksThatShouldRun = _scheduledTasks.Where(t => t.ShouldRun(referenceTime)).ToList();
-
-            foreach (var taskThatShouldRun in tasksThatShouldRun)
+            using (var scope = _provider.CreateScope())
             {
-                taskThatShouldRun.Increment();
+                var db = scope.ServiceProvider.GetRequiredService<CrmsContext>();
+                var taskFactory = new TaskFactory(TaskScheduler.Current);
 
-                await taskFactory.StartNew(
-                    () =>
+                foreach (var eventAttribute in Events)
+                {
+                    var type = db.Model.FindEntityType(eventAttribute.Table.FullName);
+                    var dbset =
+                        (IQueryable<object>) 
+                        db
+                            .GetType()
+                            .GetRuntimeProperties()
+                            .FirstOrDefault(o => o.PropertyType.IsGenericType &&
+                                                 o.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>) &&
+                                                 o.PropertyType.GenericTypeArguments.Contains(type.ClrType))
+                            ?.GetValue(db) ?? throw new Exception();
+                    var realParams = 
+                        dbset
+                            .Where(e =>
+                                TimeInInterval((DateTime) type.GetProperties()
+                                    .Single(p => p.Name == eventAttribute.TimeColumn && p.ClrType == typeof(DateTime))
+                                    .PropertyInfo.GetValue(e)))
+                            .Where(e => eventAttribute.WhereColumns
+                                .Select(col => col.StartsWith("!") ? Tuple.Create(col.Substring(1), true) : Tuple.Create(col, false))
+                                .Select(ci =>  ci.Item2 ^ Convert.ToBoolean(type.GetProperties().Single(ppt => ppt.Name == ci.Item1).PropertyInfo.GetValue(e))).All(b => b))
+                            .Select(e =>
+                                eventAttribute.ParamColumns.Select(col => e.GetType().GetProperty(col).GetValue(e))
+                                    .ToArray()).ToList();
+
+                    foreach (var parameters in realParams)
                     {
-                        try
-                        {
-                            taskThatShouldRun.Task.Invoke(taskThatShouldRun.Container, new object[]{});
-                        }
-                        catch (Exception ex)
-                        {
-                            var args = new UnobservedTaskExceptionEventArgs(
-                                ex as AggregateException ?? new AggregateException(ex));
-
-                            UnobservedTaskException?.Invoke(this, args);
-
-                            if (!args.Observed)
+                        var instance = scope.ServiceProvider.GetRequiredService(eventAttribute.Callback.DeclaringType);
+                        await taskFactory.StartNew(
+                            () =>
                             {
-                                throw;
-                            }
-                        }
-                    },
-                    cancellationToken);
+                                try
+                                {
+                                    eventAttribute.Callback.Invoke(instance, parameters);
+                                }
+                                catch (Exception ex)
+                                {
+                                    var args = new UnobservedTaskExceptionEventArgs(
+                                        ex as AggregateException ?? new AggregateException(ex));
+
+                                    UnobservedTaskException?.Invoke(this, args);
+
+                                    if (!args.Observed)
+                                    {
+                                        throw;
+                                    }
+                                }
+                            },
+                            cancellationToken);
+                    }
+                }
             }
         }
 
-        private class SchedulerTaskWrapper
-        {
-            public CrontabSchedule Schedule { private get; set; }
-            public ITimerService Container { get; set; }
-            public MethodInfo Task { get; set; }
-            private DateTime LastRunTime { get; set; }
-            public DateTime NextRunTime { private get; set; }
-
-            public void Increment()
-            {
-                LastRunTime = NextRunTime;
-                NextRunTime = Schedule.GetNextOccurrence(NextRunTime);
-            }
-
-            public bool ShouldRun(DateTime currentTime) => NextRunTime < currentTime && LastRunTime != NextRunTime;
-        }
+        private static bool TimeInInterval(DateTime time) => time > DateTime.Now && time < DateTime.Now + _Interval;
     }
 }

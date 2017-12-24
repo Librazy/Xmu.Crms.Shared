@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
+using Xmu.Crms.Shared.Models;
 using Xmu.Crms.Shared.Scheduling;
-using Xmu.Crms.Shared.Service;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return services.AddSingleton<IHostedService, SchedulerHostedService>(serviceProvider =>
             {
-                var instance = new SchedulerHostedService(serviceProvider.GetServices<ITimerService>());
+                var instance = new SchedulerHostedService(serviceProvider);
                 instance.UnobservedTaskException += unobservedTaskExceptionHandler;
                 return instance;
             });
