@@ -14,7 +14,7 @@ namespace Xmu.Crms.Shared.Scheduling
     //Stolen from https://blog.maartenballiauw.be/post/2017/08/01/building-a-scheduled-cache-updater-in-aspnet-core-2.html
     public class SchedulerHostedService : HostedService
     {
-        private static readonly TimeSpan _Interval = TimeSpan.FromMinutes(5);
+        private static readonly TimeSpan _Interval = TimeSpan.FromMinutes(10);
         private readonly IServiceProvider _provider;
         public IList<CrmsEventAttribute> Events { get; }
 
@@ -36,7 +36,6 @@ namespace Xmu.Crms.Shared.Scheduling
             while (!cancellationToken.IsCancellationRequested)
             {
                 await ExecuteOnceAsync(cancellationToken);
-
                 await Task.Delay(_Interval, cancellationToken);
             }
         }
@@ -47,8 +46,9 @@ namespace Xmu.Crms.Shared.Scheduling
             {
                 var db = scope.ServiceProvider.GetRequiredService<CrmsContext>();
                 var timer = scope.ServiceProvider.GetRequiredService<ITimerService>();
+                
                 var taskFactory = new TaskFactory(TaskScheduler.Current);
-
+                var task = taskFactory.StartNew(() => timer.Scheduled(), cancellationToken);
                 foreach (var eventAttribute in Events)
                 {
                     var type = db.Model.FindEntityType(eventAttribute.Table.FullName);
@@ -100,6 +100,7 @@ namespace Xmu.Crms.Shared.Scheduling
                             cancellationToken);
                     }
                 }
+                await task;
             }
         }
 
