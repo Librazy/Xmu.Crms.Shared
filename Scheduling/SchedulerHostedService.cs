@@ -45,10 +45,10 @@ namespace Xmu.Crms.Shared.Scheduling
             using (var scope = _provider.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<CrmsContext>();
-                var timer = scope.ServiceProvider.GetRequiredService<ITimerService>();
+                var timer = scope.ServiceProvider.GetService<ITimerService>();
                 
                 var taskFactory = new TaskFactory(TaskScheduler.Current);
-                var task = taskFactory.StartNew(() => timer.Scheduled(), cancellationToken);
+                var task = taskFactory.StartNew(() => timer?.Scheduled(), cancellationToken);
                 foreach (var eventAttribute in Events)
                 {
                     var type = db.Model.FindEntityType(eventAttribute.Table.FullName);

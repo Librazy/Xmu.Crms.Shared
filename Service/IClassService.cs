@@ -125,6 +125,5 @@ namespace Xmu.Crms.Shared.Service
         /// <exception cref="T:System.ArgumentException">userId格式错误时抛出</exception>
         ///  <exception cref="T:Xmu.Crms.Shared.Exceptions.ClassesNotFoundException">无此班级</exception>
         List<ClassInfo> ListClassByUserId(long userId);
-
     }
 }
