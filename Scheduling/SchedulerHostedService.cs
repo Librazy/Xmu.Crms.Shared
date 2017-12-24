@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xmu.Crms.Shared.Models;
+using Xmu.Crms.Shared.Service;
 
 namespace Xmu.Crms.Shared.Scheduling
 {
@@ -45,6 +46,7 @@ namespace Xmu.Crms.Shared.Scheduling
             using (var scope = _provider.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<CrmsContext>();
+                var timer = scope.ServiceProvider.GetRequiredService<ITimerService>();
                 var taskFactory = new TaskFactory(TaskScheduler.Current);
 
                 foreach (var eventAttribute in Events)
