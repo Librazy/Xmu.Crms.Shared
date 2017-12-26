@@ -156,6 +156,16 @@ namespace Xmu.Crms.Shared.Models
                 entity
                     .Property(m => m.Id)
                     .HasColumnName("id");
+
+                entity
+                    .HasOne(e => e.ClassInfo)
+                    .WithMany(f => f.CourseSelections)
+                    .HasForeignKey(e => e.ClassId);
+
+                entity
+                    .HasOne(e => e.Student)
+                    .WithMany(f => f.CourseSelections)
+                    .HasForeignKey(e => e.StudentId);
             });
 
 
@@ -505,11 +515,11 @@ namespace Xmu.Crms.Shared.Models
                     .Property(m => m.Parameter)
                     .HasColumnName("parameter");
                 entity
-                   .Property(m => m.Method)
-                   .HasColumnName("method_name");
+                    .Property(m => m.Method)
+                    .HasColumnName("method_name");
                 entity
-                   .Property(m => m.Time)
-                   .HasColumnName("time");
+                    .Property(m => m.Time)
+                    .HasColumnName("time");
             });
         }
     }

@@ -17,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Xmu.Crms.Shared.Models;
 
@@ -196,7 +197,11 @@ namespace Xmu.Crms.Shared
             services
                 .AddMvc()
                 .AddJsonOptions(
-                    option => { option.SerializerSettings.Converters.Add(new StringEnumConverter()); }
+                    option =>
+                    {
+                        option.SerializerSettings.Converters.Add(new StringEnumConverter());
+                        option.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                    }
                 )
                 .AddApplicationParts(_startupConfig.ControllerAssemblies)
                 .AddControllersAsServices();
