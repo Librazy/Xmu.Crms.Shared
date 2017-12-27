@@ -52,10 +52,10 @@ namespace Xmu.Crms.Shared.Service
         /// 用户（老师）通过seminarId修改讨论课的相关信息
         /// </summary>
         /// <param name="seminarId">讨论课的id</param>
-        /// <param name="seminar">讨论课信息</param>
+        /// <param name="updated">讨论课信息</param>
         /// <exception cref="T:System.ArgumentException">格式错误时抛出</exception>
         /// <exception cref="T:Xmu.Crms.Shared.Exceptions.SeminarNotFoundException">该讨论课不存在时抛出</exception>
-        void UpdateSeminarBySeminarId(long seminarId, Seminar seminar);
+        void UpdateSeminarBySeminarId(long seminarId, Seminar updated);
 
 
         /// <summary>

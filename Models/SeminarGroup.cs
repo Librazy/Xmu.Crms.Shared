@@ -27,7 +27,10 @@ namespace Xmu.Crms.Shared.Models
 
         public int? FinalGrade { get; set; }
 
-        [ForeignKey("leader_id")]
+        [Column("leader_id")]
+        public long LeaderId { get; set; }
+
+        [ForeignKey("LeaderId")]
         public UserInfo Leader { get; set; }
 
         public IList<SeminarGroupMember> SeminarGroupMembers { get; set; }

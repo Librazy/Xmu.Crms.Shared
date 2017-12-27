@@ -19,9 +19,9 @@ namespace Xmu.Crms.Shared.Models
 
     public enum Education
     {
-        Bachelor = 0,
-        Master = 1,
-        Doctor = 2
+        Bachelor = 1,
+        Master = 2,
+        Doctor = 3
     }
 
     public enum Title
